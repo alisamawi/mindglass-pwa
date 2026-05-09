@@ -1,73 +1,82 @@
-# React + TypeScript + Vite
+# MindGlass
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A **local-first** flashcard web app with a glassmorphism-style UI: courses, spaced repetition via **Liteck** (five-box scheduling), streak tracking, and an optional **Google Gemini** assist for importing content. Data lives in **IndexedDB** on your device; the app installs as an **offline-capable PWA**.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **Courses** — Organize decks by topic; categories include language, science, coding, exam, and custom.
+- **Study modes** — Study Lab round flow plus Liquid Study; sessions can be resumed via browser storage.
+- **Scheduling** — Cards move through Liteck boxes; due and “fresh” queues are surfaced per course.
+- **Insights** — At-a-glance progress and streak-style feedback after batches.
+- **AI import** (optional) — Generate or extract cards from text, documents, or images using Gemini when an API key is configured.
+- **Settings** — API key stored in **localStorage** on that browser only (or supply a build-time env key — see below).
+- **Deep linking** — URL history tracks tab and study state for back/forward navigation.
 
-## React Compiler
+## Tech stack
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+| Area        | Choice                          |
+| ----------- | ------------------------------- |
+| UI          | React 19, TypeScript, Tailwind CSS 4, Framer Motion |
+| Build       | Vite 8                          |
+| Local data  | [Dexie](https://dexie.org/) on IndexedDB |
+| Docs in app | pdf.js, Mammoth (.docx)         |
+| PWA         | [vite-plugin-pwa](https://vite-pwa-org.netlify.app/) |
+| AI (optional) | Google Gemini API           |
 
-## Expanding the ESLint configuration
+## Requirements
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- **Node.js** 22+ (matches the Docker image; newer LTS is fine)
+- **npm** (lockfile: `package-lock.json`)
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## Quick start
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Open the URL Vite prints (usually `http://localhost:5173`).
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+| Script        | Purpose                          |
+| ------------- | -------------------------------- |
+| `npm run dev` | Dev server with HMR              |
+| `npm run build` | Typecheck + production bundle  |
+| `npm run preview` | Serve the `dist` build locally |
+| `npm run lint`  | ESLint                         |
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## Configuration
+
+Copy `.env.example` to `.env` and adjust as needed:
+
+| Variable | Required | Description |
+| -------- | -------- | ----------- |
+| `VITE_GEMINI_API_KEY` | No | If set at **build** time, it is embedded in the client bundle. Prefer pasting a key in **Settings** so it stays in localStorage for that device only. |
+| `VITE_GEMINI_MODEL` | No | Override the default text model (see `src/lib/gemini.ts`). |
+| `VITE_GEMINI_IMAGE_MODEL` | No | Override the vision model for image-based import. |
+
+**Privacy note:** Without a Gemini key, AI import is unavailable; all flashcards and progress remain on-device. When you use Gemini, prompts and content are sent to Google’s API under their terms.
+
+## Docker
+
+Build a static site and serve it with nginx:
+
+```bash
+docker compose up --build
 ```
+
+The app is exposed on **port 3001** (mapped to container port 80). Pass `VITE_GEMINI_API_KEY` to the build if you want a baked-in key (not recommended for shared images).
+
+## PWA
+
+Install from the browser (“Add to Home Screen” / install prompt). The service worker caches static assets; runtime rules may cache Google Fonts. Service worker behavior is enabled in development as well for easier testing (`devOptions.enabled` in `vite.config.ts`).
+
+## Project layout (high level)
+
+- `src/App.tsx` — Shell: tabs, course routing, study session wiring, Gemini auth context.
+- `src/components/` — UI: courses, study modes, settings, import modal, onboarding.
+- `src/db/` — Dexie schema, `Course` and `FlashCard` types, queries.
+- `src/lib/` — Gemini client, image shrinking, speech, session storage, streaks, history helpers.
+
+## License
+
+Private project (`"private": true` in `package.json`). Add a license file if you open-source the repo.
