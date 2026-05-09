@@ -2,6 +2,7 @@ import { AnimatePresence } from 'framer-motion'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { CourseHome } from './components/CourseHome'
 import { Insights } from './components/Insights'
+import { InstallAppModal } from './components/InstallAppModal'
 import { LiquidStudy } from './components/LiquidStudy'
 import { OnboardingModal } from './components/OnboardingModal'
 import { Settings } from './components/Settings'
@@ -260,6 +261,8 @@ function Shell() {
       </div>
 
       <OnboardingModal open={onboardingOpen} onClose={() => setOnboardingOpen(false)} />
+
+      <InstallAppModal blocked={onboardingOpen} />
 
       <AnimatePresence>
         {studyOpen && session && deck.length > 0 && (
