@@ -153,7 +153,7 @@ function Shell() {
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-center gap-3 min-w-0">
               <img
-                src="/icons/icon-192.png"
+                src={`${import.meta.env.BASE_URL}icons/icon-192.png`}
                 width={40}
                 height={40}
                 alt=""
