@@ -1,25 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { isIosOrIpados, isLikelyMobileDevice, isStandalonePwa } from '../lib/pwaEnvironment'
 
 const SNOOZE_KEY = 'mindglass-install-snooze-until'
 const NEVER_KEY = 'mindglass-install-never'
-
-function isStandalone(): boolean {
-  return (
-    window.matchMedia('(display-mode: standalone)').matches ||
-    (window.navigator as Navigator & { standalone?: boolean }).standalone === true
-  )
-}
-
-function isIos(): boolean {
-  return /iPad|iPhone|iPod/.test(navigator.userAgent)
-}
-
-function isPhoneLike(): boolean {
-  const ua = navigator.userAgent || ''
-  const ud = (navigator as Navigator & { userAgentData?: { mobile?: boolean } }).userAgentData
-  if (ud?.mobile === true) return true
-  return /iPhone|iPod|Android.+Mobile|webOS|BlackBerry|IEMobile|Opera Mini/i.test(ua)
-}
 
 function isDismissed(): boolean {
   try {
@@ -31,14 +14,22 @@ function isDismissed(): boolean {
   }
 }
 
-export function InstallAppModal({ blocked }: { blocked: boolean }) {
+export function InstallAppModal({
+  blocked,
+  manualOpenNonce = 0,
+}: {
+  blocked: boolean
+  manualOpenNonce?: number
+}) {
   const [open, setOpen] = useState(false)
   const [enter, setEnter] = useState(false)
+  const [openedViaManual, setOpenedViaManual] = useState(false)
   const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null)
 
   const armedRef = useRef(false)
   const blockedRef = useRef(blocked)
   const deferredRef = useRef<BeforeInstallPromptEvent | null>(null)
+  const lastManualNonceRef = useRef(0)
 
   useEffect(() => {
     blockedRef.current = blocked
@@ -50,7 +41,7 @@ export function InstallAppModal({ blocked }: { blocked: boolean }) {
 
   const attemptShow = useCallback(() => {
     if (!armedRef.current || blockedRef.current || isDismissed()) return
-    if (isIos()) {
+    if (isIosOrIpados()) {
       setOpen(true)
       return
     }
@@ -58,7 +49,18 @@ export function InstallAppModal({ blocked }: { blocked: boolean }) {
   }, [])
 
   useEffect(() => {
-    if (isStandalone() || !isPhoneLike() || isDismissed()) return
+    if (manualOpenNonce <= 0 || manualOpenNonce === lastManualNonceRef.current) return
+    if (isStandalonePwa()) return
+    lastManualNonceRef.current = manualOpenNonce
+    const id = requestAnimationFrame(() => {
+      setOpenedViaManual(true)
+      setOpen(true)
+    })
+    return () => cancelAnimationFrame(id)
+  }, [manualOpenNonce])
+
+  useEffect(() => {
+    if (isStandalonePwa() || !isLikelyMobileDevice() || isDismissed()) return
 
     const onBip = (e: BeforeInstallPromptEvent) => {
       e.preventDefault()
@@ -70,7 +72,7 @@ export function InstallAppModal({ blocked }: { blocked: boolean }) {
     const timer = window.setTimeout(() => {
       armedRef.current = true
       requestAnimationFrame(() => attemptShow())
-    }, 5000)
+    }, 4000)
 
     return () => {
       window.removeEventListener('beforeinstallprompt', onBip)
@@ -99,13 +101,18 @@ export function InstallAppModal({ blocked }: { blocked: boolean }) {
     return () => cancelAnimationFrame(id)
   }, [open])
 
-  const close = () => setOpen(false)
+  const close = () => {
+    setOpenedViaManual(false)
+    setOpen(false)
+  }
 
   const snooze = () => {
-    try {
-      localStorage.setItem(SNOOZE_KEY, String(Date.now() + 10 * 24 * 60 * 60 * 1000))
-    } catch {
-      /* ignore */
+    if (!openedViaManual) {
+      try {
+        localStorage.setItem(SNOOZE_KEY, String(Date.now() + 10 * 24 * 60 * 60 * 1000))
+      } catch {
+        /* ignore */
+      }
     }
     close()
   }
@@ -135,7 +142,7 @@ export function InstallAppModal({ blocked }: { blocked: boolean }) {
 
   if (!open) return null
 
-  const showAndroidInstall = !isIos() && deferred != null
+  const showAndroidInstall = !isIosOrIpados() && deferred != null
 
   return (
     <div
@@ -161,21 +168,30 @@ export function InstallAppModal({ blocked }: { blocked: boolean }) {
         ) : (
           <div className="text-sm text-slate-400 space-y-3">
             <p>
-              On <span className="text-slate-200 font-medium">iPhone and iPad</span>, add MindGlass from your browser’s
-              share menu — iOS doesn’t allow websites to trigger install automatically.
+              On <span className="text-slate-200 font-medium">iPhone and iPad</span>, use{' '}
+              <span className="text-slate-200 font-medium">Safari</span> for the best result (Chrome on iOS uses the same engine but the
+              menus differ).
             </p>
             <ol className="list-decimal pl-4 space-y-2 text-slate-300">
               <li>
-                Tap <span className="text-slate-200 font-medium">Share</span>{' '}
-                <span className="whitespace-nowrap">(□↑)</span> in Safari (or your browser’s share/export menu).
+                Tap <span className="text-slate-200 font-medium">Share</span> <span className="whitespace-nowrap">(□↑)</span> in the toolbar.
               </li>
               <li>
-                Tap <span className="text-slate-200 font-medium">Add to Home Screen</span>.
+                Scroll down in the sheet — <span className="text-slate-200 font-medium">Add to Home Screen</span> is often below the fold.
+                If it’s missing: tap <span className="text-slate-200 font-medium">Edit Actions</span> and enable it.
               </li>
               <li>
                 Tap <span className="text-slate-200 font-medium">Add</span>.
               </li>
             </ol>
+            <p className="text-xs text-slate-500">
+              If you don’t see Share as <span className="whitespace-nowrap">□↑</span>, tap <span className="text-slate-300">⋯</span> or{' '}
+              <span className="text-slate-300">aA</span> in the address bar area — options vary by iOS version.
+            </p>
+            <p className="text-xs text-slate-500">
+              Using <span className="text-slate-300">Request Desktop Website</span>? Turn it off for this site (Safari{' '}
+              <span className="text-slate-300">aA</span> menu) so iOS treats it like a normal mobile page.
+            </p>
           </div>
         )}
         <div className="flex flex-col gap-2">
@@ -193,15 +209,17 @@ export function InstallAppModal({ blocked }: { blocked: boolean }) {
             className="w-full py-3 rounded-xl border border-white/15 text-slate-200 font-medium text-sm hover:bg-white/[0.06] transition"
             onClick={snooze}
           >
-            Maybe later
+            {openedViaManual ? 'Done' : 'Maybe later'}
           </button>
-          <button
-            type="button"
-            className="w-full py-2 text-xs text-slate-500 hover:text-slate-400 transition"
-            onClick={neverAgain}
-          >
-            Don’t ask again
-          </button>
+          {!openedViaManual && (
+            <button
+              type="button"
+              className="w-full py-2 text-xs text-slate-500 hover:text-slate-400 transition"
+              onClick={neverAgain}
+            >
+              Don’t ask again
+            </button>
+          )}
         </div>
       </div>
     </div>

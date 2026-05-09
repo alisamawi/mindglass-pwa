@@ -39,6 +39,8 @@ function Shell() {
 
   const [activeCourse, setActiveCourse] = useState<Course | null>(null)
   const [onboardingOpen, setOnboardingOpen] = useState(false)
+  const [installGuideNonce, setInstallGuideNonce] = useState(0)
+  const requestInstallGuide = useCallback(() => setInstallGuideNonce((n) => n + 1), [])
 
   const [studyOpen, setStudyOpen] = useState(false)
   const [session, setSession] = useState<PersistedSession | null>(null)
@@ -254,6 +256,7 @@ function Shell() {
                 manualKey={manualKey}
                 setManualKey={setManualKey}
                 onSettingsChanged={bump}
+                onRequestInstallGuide={requestInstallGuide}
               />
             )}
           </main>
@@ -262,7 +265,7 @@ function Shell() {
 
       <OnboardingModal open={onboardingOpen} onClose={() => setOnboardingOpen(false)} />
 
-      <InstallAppModal blocked={onboardingOpen} />
+      <InstallAppModal blocked={onboardingOpen} manualOpenNonce={installGuideNonce} />
 
       <AnimatePresence>
         {studyOpen && session && deck.length > 0 && (

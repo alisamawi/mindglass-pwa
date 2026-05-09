@@ -1,5 +1,6 @@
 import { type FormEvent, useEffect, useMemo, useState } from 'react'
 import { useNotify } from '../context/NotifyContext'
+import { isStandalonePwa } from '../lib/pwaEnvironment'
 import {
   DEFAULT_CARDS_PER_ROUND,
   DEFAULT_PRONUNCIATION_LANG,
@@ -46,10 +47,12 @@ export function Settings({
   manualKey,
   setManualKey,
   onSettingsChanged,
+  onRequestInstallGuide,
 }: {
   manualKey: string | null
   setManualKey: (key: string | null) => void
   onSettingsChanged?: () => void
+  onRequestInstallGuide?: () => void
 }) {
   const notify = useNotify()
   const [perRoundDraft, setPerRoundDraft] = useState(String(getCardsPerRound()))
@@ -119,6 +122,24 @@ export function Settings({
 
   return (
     <div className="px-4 pb-28 max-w-lg w-full mx-auto space-y-4">
+      {!isStandalonePwa() && onRequestInstallGuide && (
+        <div className="glass-panel p-4 space-y-3">
+          <p className="text-xs uppercase tracking-widest text-slate-400">Install</p>
+          <p className="text-lg font-semibold text-slate-100">Add to Home Screen</p>
+          <p className="text-[11px] text-slate-500">
+            MindGlass runs in the browser and can be pinned like an app. iPhone doesn’t allow an automatic install popup —
+            open these steps anytime.
+          </p>
+          <button
+            type="button"
+            className="w-full py-3 rounded-xl bg-sky-500/90 text-slate-950 text-sm font-semibold"
+            onClick={onRequestInstallGuide}
+          >
+            Show how to install
+          </button>
+        </div>
+      )}
+
       <div className="glass-panel p-4 space-y-3">
         <p className="text-xs uppercase tracking-widest text-slate-400">Study rounds</p>
         <p className="text-lg font-semibold text-slate-100">Cards per study round</p>
