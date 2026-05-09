@@ -41,9 +41,9 @@ Open the URL Vite prints (usually `http://localhost:5173`).
 | ------------- | -------------------------------- |
 | `npm run dev` | Dev server with HMR              |
 | `npm run build` | Typecheck + production bundle  |
-| `npm run build:github-pages` | Build with `/mindglass_web/` base, fill `docs/` for GitHub Pages |
+| `npm run build:github-pages` | Build with `/<repo-slug>/` base (see below), fill `docs/` |
 | `npm run preview` | Serve the `dist` build locally |
-| `npm run preview:github-pages` | Preview like GitHub Pages (`/mindglass_web/`) after `build:github-pages` |
+| `npm run preview:github-pages` | Preview Pages build at `http://localhost:4173/<repo-slug>/` |
 | `npm run lint`  | ESLint                         |
 
 ## Configuration
@@ -62,7 +62,7 @@ Copy `.env.example` to `.env` and adjust as needed:
 
 The [`docs/`](docs/) folder is a production build for **Settings → Pages → Build and deployment → Deploy from a branch**, folder **`/docs`**.
 
-1. Your GitHub **repository name** must match **`package.json`** → **`name`** (currently `mindglass_web`). That sets the URL path: `https://<user>.github.io/mindglass_web/`. Rename the repo or change `"name"` if they differ.
+1. Set **`package.json` → `homepage`** to your live Pages URL, e.g. `https://yourname.github.io/Your-Repo-Name/` (the path segment must match the repo name exactly). Optionally override with env **`VITE_GITHUB_PAGES_SLUG`** when running the build.
 2. After changes:
 
    ```bash
@@ -79,7 +79,7 @@ npm run build:github-pages
 npm run preview:github-pages
 ```
 
-Open **`http://localhost:4173/mindglass_web/`**.
+Open **`http://localhost:4173/<repo-slug>/`** — same path segment as in **`homepage`** (e.g. `/Mindglass-pwa/`).
 
 ## Docker
 

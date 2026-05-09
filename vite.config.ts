@@ -6,11 +6,28 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf-8')) as {
   name: string
+  homepage?: string
+}
+
+function githubIoRepoSlug(homepage: string | undefined): string | null {
+  if (!homepage?.trim()) return null
+  try {
+    const u = new URL(homepage)
+    if (!u.hostname.endsWith('.github.io')) return null
+    const seg = u.pathname.replace(/^\/+|\/+$/g, '').split('/')[0]
+    return seg || null
+  } catch {
+    return null
+  }
 }
 
 /** Set `VITE_GITHUB_PAGES=1` when building for `https://<user>.github.io/<repo>/`. */
 const useGithubPages = process.env.VITE_GITHUB_PAGES === '1'
-const base = useGithubPages ? `/${pkg.name}/` : '/'
+const pagesSlug =
+  process.env.VITE_GITHUB_PAGES_SLUG?.replace(/^\/+|\/+$/g, '') ||
+  githubIoRepoSlug(pkg.homepage) ||
+  pkg.name
+const base = useGithubPages ? `/${pagesSlug}/` : '/'
 
 const asset = (path: string) => `${base}${path.replace(/^\//, '')}`
 

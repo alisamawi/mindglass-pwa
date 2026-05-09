@@ -1,5 +1,6 @@
 {
   "name": "mindglass_web",
+  "homepage": "https://alisamawi.github.io/Mindglass-pwa/",
   "private": true,
   "version": "0.0.0",
   "type": "module",
