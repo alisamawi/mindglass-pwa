@@ -1,6 +1,16 @@
 import workerSrc from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
+import { isLikelyStaleChunkLoadError, staleChunkUserMessage } from './staleChunk'
 
 export type FileReadProgress = (stage: string, progress: number | null) => void
+
+async function dynamicImportStaleAware<T>(load: () => Promise<T>): Promise<T> {
+  try {
+    return await load()
+  } catch (e) {
+    if (isLikelyStaleChunkLoadError(e)) throw new Error(staleChunkUserMessage(), { cause: e })
+    throw e
+  }
+}
 
 function extOf(file: File): string {
   const n = file.name.toLowerCase()
@@ -21,14 +31,14 @@ export async function extractPlainTextFromFile(
       return file.text()
     case '.docx': {
       onProgress?.('Reading Word document…', null)
-      const mammoth = await import('mammoth')
+      const mammoth = await dynamicImportStaleAware(() => import('mammoth'))
       const arr = await file.arrayBuffer()
       const r = await mammoth.extractRawText({ arrayBuffer: arr })
       return r.value
     }
     case '.pdf': {
       onProgress?.('Loading PDF…', null)
-      const pdfjs = await import('pdfjs-dist')
+      const pdfjs = await dynamicImportStaleAware(() => import('pdfjs-dist'))
       pdfjs.GlobalWorkerOptions.workerSrc = workerSrc
       const buf = await file.arrayBuffer()
       const loading = pdfjs.getDocument({ data: new Uint8Array(buf) })
