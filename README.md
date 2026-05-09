@@ -2,6 +2,8 @@
 
 A **local-first** flashcard web app with a glassmorphism-style UI: courses, spaced repetition via **Liteck** (five-box scheduling), streak tracking, and an optional **Google Gemini** assist for importing content. Data lives in **IndexedDB** on your device; the app installs as an **offline-capable PWA**.
 
+**Live preview (GitHub Pages):** [alisamawi.github.io/Mindglass-pwa](https://alisamawi.github.io/Mindglass-pwa/)
+
 ## Features
 
 - **Courses** — Organize decks by topic; categories include language, science, coding, exam, and custom.
