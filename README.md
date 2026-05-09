@@ -41,7 +41,9 @@ Open the URL Vite prints (usually `http://localhost:5173`).
 | ------------- | -------------------------------- |
 | `npm run dev` | Dev server with HMR              |
 | `npm run build` | Typecheck + production bundle  |
+| `npm run build:github-pages` | Build with `/mindglass_web/` base, fill `docs/` for GitHub Pages |
 | `npm run preview` | Serve the `dist` build locally |
+| `npm run preview:github-pages` | Preview like GitHub Pages (`/mindglass_web/`) after `build:github-pages` |
 | `npm run lint`  | ESLint                         |
 
 ## Configuration
@@ -55,6 +57,29 @@ Copy `.env.example` to `.env` and adjust as needed:
 | `VITE_GEMINI_IMAGE_MODEL` | No | Override the vision model for image-based import. |
 
 **Privacy note:** Without a Gemini key, AI import is unavailable; all flashcards and progress remain on-device. When you use Gemini, prompts and content are sent to Google’s API under their terms.
+
+## GitHub Pages
+
+The [`docs/`](docs/) folder is a production build for **Settings → Pages → Build and deployment → Deploy from a branch**, folder **`/docs`**.
+
+1. Your GitHub **repository name** must match **`package.json`** → **`name`** (currently `mindglass_web`). That sets the URL path: `https://<user>.github.io/mindglass_web/`. Rename the repo or change `"name"` if they differ.
+2. After changes:
+
+   ```bash
+   npm run build:github-pages
+   ```
+
+3. Commit and push **`docs/`**.
+4. Enable Pages on **`/docs`** for your default branch.
+
+Local smoke test:
+
+```bash
+npm run build:github-pages
+npm run preview:github-pages
+```
+
+Open **`http://localhost:4173/mindglass_web/`**.
 
 ## Docker
 
